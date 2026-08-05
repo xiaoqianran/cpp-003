@@ -35,6 +35,7 @@ UI → EngineConfig → rt_apply → engine
 | `cpp/material.h` | 朗伯采样纹理 |
 | `cpp/loader_obj.h` | 内存 OBJ 解析 |
 | `cpp/instance.h` | 平移/旋转/缩放实例 |
+| `cpp/atmosphere.h` | 程序天空 · 均匀体积雾 |
 | `cpp/scenes.h` | 作业房间、康奈尔、晶簇 |
 
 ## 场景
@@ -51,4 +52,4 @@ npm run build          # BASE_PATH=/cpp-003/ 用于 Pages
 
 ## 课程路线（UI「完整课程」逐步扩充）
 
-三角 → UV → Mesh+BVH → 纹理/双线性 → OBJ → instance → 高度凹凸
+三角 → UV → Mesh+BVH → 纹理 → OBJ → instance → 凹凸 → 天空/雾

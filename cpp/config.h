@@ -32,8 +32,8 @@ struct EngineConfig {
 };
 
 inline color scene_background(int scene_id) {
-  if (scene_id == 3) return color(0, 0, 0);
-  if (scene_id == 2) return color(0.15, 0.16, 0.2);
-  if (scene_id == 1) return color(0.55, 0.65, 0.85);
+  // 室外场景实际由 Atmosphere::env_sky 接管；此处作回退色
+  if (scene_id == 1) return color(0, 0, 0);
+  if (scene_id == 2) return color(0.05, 0.05, 0.06);
   return color(0.70, 0.80, 1.00);
 }

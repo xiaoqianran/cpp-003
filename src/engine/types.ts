@@ -24,11 +24,11 @@ export type EngineConfig = {
 export type ConfigPatch = Partial<EngineConfig> & { label?: string };
 
 export const SCENES: { id: SceneId; name: string; desc: string }[] = [
-  { id: 0, name: "棋盘与贴图球", desc: "双线性贴图 + 凹凸球" },
-  { id: 1, name: "纹理康奈尔", desc: "网格雕塑 · 贴图立方 · 面光" },
-  { id: 2, name: "作业房间", desc: "OBJ · instance 椅 · 凹凸墙" },
-  { id: 3, name: "晶簇 BVH", desc: "instance 阵列 + SAH" },
-  { id: 4, name: "经典三球", desc: "衔接 cpp-002" },
+  { id: 0, name: "棋盘与贴图球", desc: "天空环境 + 轻雾 + 凹凸" },
+  { id: 1, name: "纹理康奈尔", desc: "面光 · 无雾（对照）" },
+  { id: 2, name: "作业房间", desc: "室内薄雾 · OBJ · instance" },
+  { id: 3, name: "雾中晶簇", desc: "浓雾天空 + instance BVH" },
+  { id: 4, name: "经典三球", desc: "室外天空 · 衔接 002" },
 ];
 
 export const DEBUG_MODES = [
@@ -49,10 +49,10 @@ export const ORBIT_YAW_SENS = 0.005;
 export const ORBIT_PITCH_SENS = 0.004;
 
 export function sceneBackground(sceneId: SceneId): [number, number, number] {
+  // 室外由 C++ Atmosphere 接管；此处仅作 apply 回退
   if (sceneId === 1) return [0, 0, 0];
   if (sceneId === 2) return [0.05, 0.05, 0.06];
-  if (sceneId === 3) return [0.45, 0.55, 0.75];
-  return [0.7, 0.8, 1.0];
+  return [0.55, 0.65, 0.9];
 }
 
 export function sceneDefaults(sceneId: SceneId): Pick<
@@ -67,7 +67,7 @@ export function sceneDefaults(sceneId: SceneId): Pick<
     return { yaw: 0.35, pitch: 0.12, radius: 5.2, vfov: 42, defocus: 0, maxDepth: 40, background };
   }
   if (sceneId === 3) {
-    return { yaw: 0.3, pitch: 0.2, radius: 16, vfov: 25, defocus: 0, maxDepth: 12, background };
+    return { yaw: 0.3, pitch: 0.2, radius: 16, vfov: 25, defocus: 0, maxDepth: 48, background };
   }
   if (sceneId === 4) {
     return { yaw: 0.35, pitch: 0.18, radius: 6.2, vfov: 30, defocus: 0.25, maxDepth: 24, background };

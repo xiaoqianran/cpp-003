@@ -221,6 +221,70 @@ export const CHAPTERS: Chapter[] = [
       },
     ],
   },
+  {
+    id: "ch08",
+    index: 8,
+    title: "环境天空",
+    subtitle: "方向相关 miss 颜色",
+    lessons: [
+      {
+        id: "ch08-sky",
+        title: "程序天空与太阳",
+        minutes: 10,
+        summary: "射线未命中时按方向混合地平线/天顶，并叠加太阳圆盘。",
+        refs: ["PBRT infinite light 简化"],
+        blocks: [
+          {
+            type: "p",
+            text: "Atmosphere::eval_sky。场景 0/3/4 开启 env_sky；康奈尔保持黑背景。",
+          },
+          {
+            type: "map",
+            rows: [
+              { file: "cpp/atmosphere.h", note: "天空 + 雾参数" },
+              { file: "cpp/path_tracer.h", note: "miss_color" },
+            ],
+          },
+        ],
+        action: { label: "室外贴图球", sceneId: 0 },
+      },
+    ],
+  },
+  {
+    id: "ch09",
+    index: 9,
+    title: "均匀体积雾",
+    subtitle: "Beer + 自由程采样",
+    lessons: [
+      {
+        id: "ch09-fog",
+        title: "齐次介质",
+        minutes: 14,
+        summary: "自由程 t=-ln(1-ξ)/σ；体积内各向同性散射；表面贡献乘 e^{-σt}。",
+        refs: ["PBRT volume 简化", "GAMES202 体积"],
+        blocks: [
+          {
+            type: "formula",
+            latex: "T(t)=e^{-σ_t t},\quad t_{free}=-\\ln(1-ξ)/σ_t",
+          },
+          {
+            type: "ul",
+            items: [
+              "场景 3：浓雾晶簇",
+              "场景 2：室内薄雾",
+              "NEE 阴影同样乘透射",
+            ],
+          },
+          {
+            type: "callout",
+            tone: "warn",
+            text: "浓雾噪声大，可开 NEE/RR 并略降分辨率。",
+          },
+        ],
+        action: { label: "雾中晶簇", sceneId: 3, useBvh: true, useNee: true },
+      },
+    ],
+  },
 ];
 
 export function allLessons() {

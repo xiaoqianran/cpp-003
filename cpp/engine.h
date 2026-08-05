@@ -6,6 +6,7 @@
 #include "color.h"
 #include "config.h"
 #include "hittable.h"
+#include "atmosphere.h"
 #include "path_tracer.h"
 #include "scenes.h"
 #include <vector>
@@ -26,6 +27,7 @@ public:
     cam.initialize(cfg.width, cfg.height);
     tracer.set_flags(cfg.flags);
     tracer.background = cfg.background;
+    tracer.atm = atmosphere_for_scene(cfg.scene_id);
     tracer.lights = &lights;
     reset_accum();
   }

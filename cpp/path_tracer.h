@@ -1,6 +1,7 @@
-// 路径追踪积分器：渲染方程的数值求解（NEE / MIS / RR / 调试）
+// 路径追踪：NEE / MIS / RR + 天空环境 + 均匀体积雾
 #pragma once
 
+#include "atmosphere.h"
 #include "config.h"
 #include "hittable.h"
 #include "material.h"
@@ -13,6 +14,7 @@ class path_tracer {
 public:
   TraceFlags flags;
   color background = color(0, 0, 0);
+  Atmosphere atm{};
   const std::vector<shared_ptr<quad>> *lights = nullptr;
 
   void set_flags(const TraceFlags &f) { flags = f; }
@@ -28,15 +30,40 @@ private:
     return a2 / (a2 + b2 + 1e-12);
   }
 
+  color miss_color(const ray &r) const {
+    if (flags.debug_mode != 0) return color(0, 0, 0);
+    if (atm.env_sky) return atm.eval_sky(r.direction());
+    return background;
+  }
+
   color trace_impl(const ray &r, int depth, const hittable &world, bool is_camera_ray, int bounce,
                    double prev_bsdf_pdf, bool prev_lambert) const {
     if (depth <= 0) return color(0, 0, 0);
 
     hit_record rec;
-    if (!world.hit(r, interval(0.001, infinity), rec)) {
-      if (flags.debug_mode != 0) return color(0, 0, 0);
-      return background;
+    const bool hit = world.hit(r, interval(0.001, infinity), rec);
+    const double t_hit = hit ? rec.t : infinity;
+
+    // —— 均匀体积：可能在到达表面前散射 ——
+    if (atm.fog_density > 1e-8 && flags.debug_mode == 0) {
+      double t_s;
+      if (atm.sample_scatter(t_hit, t_s)) {
+        point3 p = r.at(t_s);
+        vec3 new_dir = random_unit_vector();
+        // 深度将尽时直接估天空，避免纯黑
+        if (depth <= 2) {
+          color env = atm.env_sky ? atm.eval_sky(new_dir) : background;
+          return atm.fog_albedo * env;
+        }
+        return atm.fog_albedo *
+               trace_impl(ray(p, new_dir), depth - 1, world, false, bounce + 1, -1.0, false);
+      }
     }
+
+    if (!hit) return miss_color(r);
+
+    // 表面路径乘透射（到达表面时的 Beer）
+    const double Tr = (flags.debug_mode == 0) ? atm.transmittance(rec.t) : 1.0;
 
     if (flags.debug_mode == 1)
       return 0.5 * color(rec.normal.x() + 1, rec.normal.y() + 1, rec.normal.z() + 1);
@@ -45,7 +72,7 @@ private:
       return color(d, d, d);
     }
     if (flags.debug_mode == 3) return rec.mat->emitted(rec);
-    if (flags.debug_mode == 4) return color(rec.u, rec.v, 0.15); // UV 可视化
+    if (flags.debug_mode == 4) return color(rec.u, rec.v, 0.15);
 
     rec.mat->perturb_normal(rec);
 
@@ -53,13 +80,14 @@ private:
     const bool hit_light = emit.length_squared() > 0;
 
     if (hit_light) {
-      if (is_camera_ray || !flags.nee) return emit;
-      if (flags.mis && prev_lambert && prev_bsdf_pdf > 0) {
+      color Le(0, 0, 0);
+      if (is_camera_ray || !flags.nee)
+        Le = emit;
+      else if (flags.mis && prev_lambert && prev_bsdf_pdf > 0) {
         double pdf_l = pdf_light_direction(r.origin(), unit_vector(r.direction()), rec);
-        if (pdf_l <= 0) return color(0, 0, 0);
-        return emit * mis_weight(prev_bsdf_pdf, pdf_l);
+        if (pdf_l > 0) Le = emit * mis_weight(prev_bsdf_pdf, pdf_l);
       }
-      return color(0, 0, 0);
+      return Le * Tr;
     }
 
     ray scattered;
@@ -77,13 +105,13 @@ private:
     if (flags.rr && bounce >= 3) {
       double p = std::fmax(attenuation.x(), std::fmax(attenuation.y(), attenuation.z()));
       p = clamp(p, 0.05, 0.95);
-      if (random_double() > p) return L;
+      if (random_double() > p) return L * Tr;
       attenuation = attenuation / p;
     }
 
     L += attenuation *
          trace_impl(scattered, depth - 1, world, false, bounce + 1, bsdf_pdf, lambert);
-    return L;
+    return L * Tr;
   }
 
   double pdf_light_direction(const point3 &origin, const vec3 &unit_dir,
@@ -150,7 +178,9 @@ private:
     color Le = light->material_ptr()->emitted(light_rec);
 
     color f = rec.mat->brdf_lambert(rec);
-    color contrib = f * Le * (cos_surf / pdf_solid);
+    // 阴影透射
+    double Tr_shadow = atm.transmittance(dist);
+    color contrib = f * Le * (cos_surf / pdf_solid) * Tr_shadow;
 
     if (flags.mis) {
       double pdf_bsdf = cos_surf / pi;
