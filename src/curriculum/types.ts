@@ -1,10 +1,9 @@
-/** 课程数据结构 */
+/** 课程数据结构 · cpp-003 */
 
 export type LessonAction = {
   label: string;
-  /** 一键把实验台调到本课推荐状态 */
   sceneId?: 0 | 1 | 2 | 3 | 4;
-  debugMode?: 0 | 1 | 2 | 3;
+  debugMode?: 0 | 1 | 2 | 3 | 4;
   useNee?: boolean;
   useMis?: boolean;
   useBvh?: boolean;
@@ -30,7 +29,7 @@ export type Lesson = {
   title: string;
   minutes: number;
   summary: string;
-  refs: string[]; // GAMES101 / Shirley / PBRT
+  refs: string[];
   blocks: LessonBlock[];
   action?: LessonAction;
 };

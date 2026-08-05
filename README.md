@@ -8,48 +8,48 @@
 
 | | cpp-002 | cpp-003 |
 |--|---------|---------|
-| 几何 | 球 + 四边形 | **三角网格**（MT 求交） |
-| 外观 | 常量 albedo | **纹理 / UV 棋盘 / 程序图像** |
-| 积分 | NEE · MIS · RR | **继承**，少改积分器 |
-| 焦点 | 渲染方程 | **资产管线** |
+| 几何 | 球 + 四边形 | **三角网格**（MT） |
+| 外观 | 常量 albedo | **纹理 / UV / 双线性 / 凹凸** |
+| 资产 | 无 | **OBJ · instance** |
+| 大气 | 常量背景 | **程序天空 · 均匀雾** |
+| 积分 | NEE·MIS·RR·BVH | **继承** |
+| 教学 | 渲染方程 | **12 章资产精读**（应用内「完整课程」） |
 
 - 仓库：https://github.com/xiaoqianran/cpp-003  
-- 演示（部署后）：https://xiaoqianran.github.io/cpp-003/
+- 演示：https://xiaoqianran.github.io/cpp-003/  
+- 大纲：[docs/COURSE.md](./docs/COURSE.md)
+
+## 是否够用？
+
+**作为一章「资产进 PT」的教学仓库：够用、可结业。**  
+不是 PBRT 全书：mipmap、环境重要性采样、异质体积、切空间法线贴图等明确列为 004+。
 
 ## 架构
-
-继承 002 的 Config 驱动：
 
 ```text
 UI → EngineConfig → rt_apply → engine
         camera · path_tracer · film
-        mesh / texture / material / SAH-BVH
+        mesh / texture / OBJ / instance / atmosphere
 ```
-
-新增模块：
 
 | 文件 | 职责 |
 |------|------|
-| `cpp/mesh.h` | 三角 · Möller–Trumbore · 立方/晶体 mesh |
-| `cpp/texture.h` | solid / checker / UV checker / image |
-| `cpp/material.h` | 朗伯采样纹理 |
-| `cpp/loader_obj.h` | 内存 OBJ 解析 |
+| `cpp/mesh.h` | MT 求交 · cube/box/crystal |
+| `cpp/texture.h` | solid/checker/uv/image 双线性 |
+| `cpp/loader_obj.h` | 内存 OBJ |
 | `cpp/instance.h` | 平移/旋转/缩放实例 |
-| `cpp/atmosphere.h` | 程序天空 · 均匀体积雾 |
-| `cpp/scenes.h` | 作业房间、康奈尔、晶簇 |
+| `cpp/atmosphere.h` | 天空 · Beer · 自由程 |
+| `cpp/scenes.h` | 五套场景 |
+| `src/curriculum/chapters.ts` | 完整课程正文 |
 
 ## 场景
 
-0 棋盘贴图球 · 1 纹理康奈尔 · **2 作业房间（OBJ 奖杯）** · 3 晶簇 BVH · 4 经典三球
+0 室外贴图球 · 1 纹理康奈尔 · **2 作业房间** · 3 雾中晶簇 · 4 经典三球
 
 ## 命令
 
 ```bash
 npm run dev
 npm run build:wasm
-npm run build          # BASE_PATH=/cpp-003/ 用于 Pages
+npm run build   # Pages: BASE_PATH=/cpp-003/
 ```
-
-## 课程路线（UI「完整课程」逐步扩充）
-
-三角 → UV → Mesh+BVH → 纹理 → OBJ → instance → 凹凸 → 天空/雾

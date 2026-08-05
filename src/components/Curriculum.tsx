@@ -12,7 +12,7 @@ import { CHAPTERS, findLesson } from "../curriculum/chapters";
 import type { Lesson, LessonAction, LessonBlock } from "../curriculum/types";
 import { MermaidBlock } from "./MermaidBlock";
 
-const PROGRESS_KEY = "cpp002-course-progress-v1";
+const PROGRESS_KEY = "cpp003-course-progress-v1";
 
 export type CourseApply = (action: LessonAction) => void;
 
@@ -77,10 +77,10 @@ export function Curriculum({
           <GraduationCap className="size-5 text-accent" />
           <div>
             <h2 className="text-sm font-semibold tracking-tight md:text-base">
-              完整课程 · 路径追踪精读
+              完整课程 · 网格与纹理精读
             </h2>
             <p className="text-xs text-fg-subtle">
-              对照 GAMES101 / Shirley / PBRT · 进度 {doneCount}/{totalLessons}
+              对照 GAMES101 · Shirley Next Week · PBRT · 进度 {doneCount}/{totalLessons}
             </p>
           </div>
         </div>

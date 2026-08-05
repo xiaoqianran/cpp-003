@@ -8,7 +8,7 @@ export function LearningPanel({ onOpenCourse }: { onOpenCourse?: () => void }) {
         完整课程 · cpp-003
       </div>
       <p className="mb-3 text-xs leading-relaxed text-fg-muted">
-        三角求交 · 重心 UV · Mesh+BVH · 纹理采样。接续 002 的路径追踪积分。
+        12 章精读：三角 MT · 纹理 · OBJ · instance · 天空/雾 · 作业房间。对照 GAMES101 / Shirley。
       </p>
       <ul className="mb-3 space-y-1 text-[11px] text-fg-subtle">
         <li>· Möller–Trumbore 与重心坐标</li>
