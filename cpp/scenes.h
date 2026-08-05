@@ -1,7 +1,8 @@
-// cpp-003 场景：纹理 · 三角网格 · OBJ · 作业房间
+// cpp-003 场景：纹理 · mesh · OBJ · instance · 凹凸
 #pragma once
 
 #include "hittable.h"
+#include "instance.h"
 #include "loader_obj.h"
 #include "material.h"
 #include "mesh.h"
@@ -10,10 +11,17 @@
 #include "texture.h"
 #include <vector>
 
+// 把 mesh 包成 list 再 instance
+inline shared_ptr<hittable> mesh_as_hittable(const triangle_mesh &m) {
+  auto list = make_shared<hittable_list>();
+  m.append_to(*list);
+  return list;
+}
+
 // 0 棋盘 + 贴图球
 // 1 纹理康奈尔 + mesh
-// 2 作业房间（OBJ 奖杯 + 家具）
-// 3 晶簇 BVH 压力
+// 2 作业房间（OBJ + 多实例椅子 + 凹凸墙）
+// 3 晶簇 BVH
 // 4 经典三球
 inline void build_scene(int scene_id, hittable_list &world,
                         std::vector<shared_ptr<quad>> &lights) {
@@ -26,8 +34,11 @@ inline void build_scene(int scene_id, hittable_list &world,
     world.add(make_shared<sphere>(point3(0, -1000, 0), 1000, make_shared<lambertian>(checker)));
     world.add(make_shared<sphere>(point3(0, 1, 0), 1.0,
                                   make_shared<lambertian>(image_texture::make_demo(64, 64))));
+    // 凹凸球：albedo 木纹 + bump 棋盘高度
+    auto wood = image_texture::make_wood(64, 64);
+    auto bump = make_shared<uv_checker_texture>(12, color(0, 0, 0), color(1, 1, 1));
     world.add(make_shared<sphere>(point3(-2.2, 1, 0), 1.0,
-                                  make_shared<metal>(color(0.8, 0.8, 0.9), 0.05)));
+                                  make_shared<lambertian>(wood, bump, 0.35)));
     world.add(make_shared<sphere>(point3(2.2, 1, 0), 1.0, make_shared<dielectric>(1.5)));
     return;
   }
@@ -63,8 +74,12 @@ inline void build_scene(int scene_id, hittable_list &world,
   }
 
   if (scene_id == 2) {
-    // —— 作业房间：地板 + 墙 + 桌椅(立方) + OBJ 奖杯 + 灯 ——
-    auto wall = make_shared<lambertian>(color(0.82, 0.8, 0.75));
+    auto wall_col = color(0.82, 0.8, 0.75);
+    // 后墙：颜色 + 砖纹高度凹凸
+    auto brick_bump = make_shared<uv_checker_texture>(10, color(0.0, 0, 0), color(1, 1, 1));
+    auto wall_bump =
+        make_shared<lambertian>(make_shared<solid_color>(wall_col), brick_bump, 0.25);
+    auto wall = make_shared<lambertian>(wall_col);
     auto floor = make_shared<lambertian>(
         make_shared<uv_checker_texture>(12, color(0.25, 0.22, 0.2), color(0.55, 0.5, 0.42)));
     auto wood = make_shared<lambertian>(image_texture::make_wood(128, 128));
@@ -72,13 +87,11 @@ inline void build_scene(int scene_id, hittable_list &world,
     auto light = make_shared<diffuse_light>(color(12, 11, 10));
     auto fabric = make_shared<lambertian>(color(0.15, 0.25, 0.45));
 
-    // 房间 x[-3,3] z[-3,2] y[0,2.6]
     world.add(make_shared<quad>(point3(-3, 0, 2), vec3(6, 0, 0), vec3(0, 0, -5), floor));
-    world.add(make_shared<quad>(point3(-3, 0, -3), vec3(6, 0, 0), vec3(0, 2.6, 0), wall));
+    world.add(make_shared<quad>(point3(-3, 0, -3), vec3(6, 0, 0), vec3(0, 2.6, 0), wall_bump));
     world.add(make_shared<quad>(point3(-3, 0, 2), vec3(0, 0, -5), vec3(0, 2.6, 0),
                                 make_shared<lambertian>(color(0.75, 0.78, 0.82))));
-    world.add(make_shared<quad>(point3(3, 0, -3), vec3(0, 0, 5), vec3(0, 2.6, 0),
-                                make_shared<lambertian>(color(0.78, 0.75, 0.7))));
+    world.add(make_shared<quad>(point3(3, 0, -3), vec3(0, 0, 5), vec3(0, 2.6, 0), wall));
     world.add(make_shared<quad>(point3(-3, 2.6, -3), vec3(6, 0, 0), vec3(0, 0, 5),
                                 make_shared<lambertian>(color(0.9, 0.9, 0.88))));
 
@@ -87,36 +100,41 @@ inline void build_scene(int scene_id, hittable_list &world,
     world.add(lamp);
     lights.push_back(lamp);
 
-    // 桌子：扁桌面 + 四腿
+    // 桌子
     make_box_mesh(wood, point3(0, 0.74, -0.3), vec3(0.9, 0.04, 0.55)).append_to(world);
     for (double dx : {-0.75, 0.75}) {
       for (double dz : {-0.7, 0.15}) {
-        make_box_mesh(metal_leg, point3(dx, 0.37, dz - 0.3), vec3(0.04, 0.37, 0.04)).append_to(world);
+        make_box_mesh(metal_leg, point3(dx, 0.37, dz - 0.3), vec3(0.04, 0.37, 0.04))
+            .append_to(world);
       }
     }
 
-    // 椅子：座面 + 靠背
-    make_box_mesh(fabric, point3(-1.55, 0.42, 0.55), vec3(0.28, 0.04, 0.28)).append_to(world);
-    make_box_mesh(wood, point3(-1.55, 0.7, 0.32), vec3(0.28, 0.28, 0.04)).append_to(world);
+    // 椅子原型（在原点附近）再 instance 复制
+    auto chair = make_shared<hittable_list>();
+    make_box_mesh(fabric, point3(0, 0.42, 0), vec3(0.28, 0.04, 0.28)).append_to(*chair);
+    make_box_mesh(wood, point3(0, 0.7, -0.24), vec3(0.28, 0.28, 0.04)).append_to(*chair);
     for (double dx : {-0.22, 0.22}) {
       for (double dz : {-0.18, 0.18}) {
-        make_box_mesh(wood, point3(-1.55 + dx, 0.2, 0.55 + dz), vec3(0.03, 0.2, 0.03)).append_to(world);
+        make_box_mesh(wood, point3(dx, 0.2, dz), vec3(0.03, 0.2, 0.03)).append_to(*chair);
       }
     }
+    world.add(instance_ry_t(chair, 15, vec3(-1.55, 0, 0.55)));
+    world.add(instance_ry_t(chair, -25, vec3(1.5, 0, 0.4)));
+    world.add(instance_ry_t(chair, 180, vec3(0.2, 0, -1.4)));
 
-    // OBJ 奖杯（内嵌字符串）
+    // OBJ 奖杯 × 多实例（旋转复制）
     auto gold = make_shared<metal>(color(0.9, 0.75, 0.3), 0.12);
-    auto trophy =
-        load_obj_string(k_builtin_trophy_obj(), gold, point3(0.15, 0.82, -0.25), 0.55, 0.4);
-    trophy.append_to(world);
+    auto trophy_mesh =
+        load_obj_string(k_builtin_trophy_obj(), gold, point3(0, 0, 0), 0.55, 0.0);
+    auto trophy = mesh_as_hittable(trophy_mesh);
+    world.add(instance_ry_t(trophy, 20, vec3(0.15, 0.82, -0.25)));
+    world.add(instance_ry_t(trophy, -40, vec3(-0.55, 0.82, -0.55)));
 
-    // 小四面体装饰
     auto tet = load_obj_string(k_builtin_tetra_obj(),
                                make_shared<lambertian>(image_texture::make_demo(32, 32)),
-                               point3(0.7, 0.95, -0.5), 0.18, 0.8);
-    tet.append_to(world);
+                               point3(0, 0, 0), 0.18, 0.0);
+    world.add(instance_ry_t(mesh_as_hittable(tet), 35, vec3(0.75, 0.95, -0.45)));
 
-    // 窗玻璃感球体
     world.add(make_shared<sphere>(point3(2.2, 1.2, -1.5), 0.35, make_shared<dielectric>(1.5)));
     return;
   }
@@ -124,24 +142,24 @@ inline void build_scene(int scene_id, hittable_list &world,
   if (scene_id == 3) {
     auto ground = make_shared<lambertian>(color(0.4, 0.4, 0.45));
     world.add(make_shared<quad>(point3(-12, 0, -12), vec3(24, 0, 0), vec3(0, 0, 24), ground));
+    // 单晶体原型 + 网格 instance（比全展开更省内存，演示 instance）
     auto mat_a = make_shared<lambertian>(image_texture::make_demo(24, 24));
     auto mat_b = make_shared<metal>(color(0.7, 0.7, 0.75), 0.15);
-    auto mat_c = make_shared<lambertian>(
-        make_shared<uv_checker_texture>(6, color(0.8, 0.2, 0.2), color(0.9, 0.9, 0.9)));
+    auto proto_c = mesh_as_hittable(make_crystal_mesh(mat_a, point3(0, 0, 0), 0.45));
+    auto proto_b = mesh_as_hittable(make_cube_mesh(mat_b, point3(0, 0, 0), 0.7));
     int n = 0;
     for (int i = -5; i <= 5; ++i) {
       for (int j = -5; j <= 5; ++j) {
-        shared_ptr<material> mat = mat_a;
-        if (n % 3 == 1) mat = mat_b;
-        if (n % 3 == 2) mat = mat_c;
         point3 c(i * 1.1 + 0.2 * (j % 2), 0.55, j * 1.1);
+        double yaw = 15.0 * ((i * 3 + j) % 8);
         if ((i + j) % 2 == 0)
-          make_crystal_mesh(mat, c, 0.45).append_to(world);
+          world.add(instance_ry_t(proto_c, yaw, vec3(c.x(), c.y(), c.z())));
         else
-          make_cube_mesh(mat, c, 0.7).append_to(world);
+          world.add(instance_ry_t(proto_b, yaw, vec3(c.x(), c.y(), c.z())));
         ++n;
       }
     }
+    (void)n;
     return;
   }
 

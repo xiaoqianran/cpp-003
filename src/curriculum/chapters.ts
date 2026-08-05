@@ -166,6 +166,61 @@ export const CHAPTERS: Chapter[] = [
       },
     ],
   },
+  {
+    id: "ch06",
+    index: 6,
+    title: "实例变换",
+    subtitle: "translate · rotate_y",
+    lessons: [
+      {
+        id: "ch06-instance",
+        title: "Instance 不复制几何",
+        minutes: 10,
+        summary: "一份 mesh，多次 translate/rotate 实例化；射线变到局部求交。",
+        refs: ["Shirley Next Week ch.2"],
+        blocks: [
+          {
+            type: "p",
+            text: "instance.h：translate / rotate_y / scale_uniform。作业房间三把椅子、两座奖杯共用原型。",
+          },
+          {
+            type: "map",
+            rows: [
+              { file: "cpp/instance.h", note: "变换包装" },
+              { file: "cpp/scenes.h", note: "instance_ry_t" },
+            ],
+          },
+        ],
+        action: { label: "作业房间看多椅", sceneId: 2 },
+      },
+    ],
+  },
+  {
+    id: "ch07",
+    index: 7,
+    title: "高度凹凸",
+    subtitle: "bump from height",
+    lessons: [
+      {
+        id: "ch07-bump",
+        title: "高度图扰动法线",
+        minutes: 10,
+        summary: "用纹理 R 通道当高度，切空间梯度改法线，廉价的「细节」。",
+        refs: ["Blinn bump mapping 简化"],
+        blocks: [
+          {
+            type: "formula",
+            latex: "n' = normalize( n - s (∂h/∂u T + ∂h/∂v B) )",
+          },
+          {
+            type: "p",
+            text: "场景 0 左侧球、场景 2 后墙。调试「法线」看几何；美观模式看照明变化。",
+          },
+        ],
+        action: { label: "贴图球看凹凸", sceneId: 0 },
+      },
+    ],
+  },
 ];
 
 export function allLessons() {

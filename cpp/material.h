@@ -1,4 +1,4 @@
-// 材质：支持纹理朗伯 + 金属 / 介质 / 发光
+// 材质：纹理朗伯 + 可选高度凹凸 + 金属 / 介质 / 发光
 #pragma once
 
 #include "hittable.h"
@@ -35,12 +35,32 @@ public:
   virtual double scattering_pdf(const ray &, const hit_record &, const ray &) const {
     return -1.0;
   }
+
+  virtual void perturb_normal(hit_record &rec) const { (void)rec; }
 };
 
 class lambertian : public material {
 public:
   lambertian(const color &albedo) : tex(make_shared<solid_color>(albedo)) {}
   lambertian(shared_ptr<texture> t) : tex(t) {}
+  lambertian(shared_ptr<texture> t, shared_ptr<texture> bump_tex, double strength = 1.0)
+      : tex(t), bump(bump_tex), bump_strength(strength) {}
+
+  void perturb_normal(hit_record &rec) const override {
+    if (!bump) return;
+    const double eps = 0.003;
+    auto height = [&](double u, double v) { return bump->value(u, v, rec.p).x(); };
+    double h0 = height(rec.u, rec.v);
+    double hu = (height(rec.u + eps, rec.v) - h0) / eps;
+    double hv = (height(rec.u, rec.v + eps) - h0) / eps;
+    onb basis;
+    basis.build_from_w(rec.normal);
+    // 高度梯度 → 切空间扰动
+    vec3 n = unit_vector(rec.normal - bump_strength * (hu * basis.u() + hv * basis.v()));
+    // 保持与原 front_face 一致的朝向
+    if (dot(n, rec.normal) < 0) n = -n;
+    rec.normal = n;
+  }
 
   bool scatter(const ray &, const hit_record &rec, color &attenuation,
                ray &scattered) const override {
@@ -65,6 +85,8 @@ public:
 
 private:
   shared_ptr<texture> tex;
+  shared_ptr<texture> bump;
+  double bump_strength = 1.0;
 };
 
 class metal : public material {

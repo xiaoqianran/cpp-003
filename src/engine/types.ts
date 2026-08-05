@@ -1,7 +1,7 @@
 /** 前端唯一配置源 — 与 C++ EngineConfig 对齐 */
 
 export type SceneId = 0 | 1 | 2 | 3 | 4;
-export type DebugMode = 0 | 1 | 2 | 3;
+export type DebugMode = 0 | 1 | 2 | 3 | 4;
 
 export type EngineConfig = {
   sceneId: SceneId;
@@ -24,10 +24,10 @@ export type EngineConfig = {
 export type ConfigPatch = Partial<EngineConfig> & { label?: string };
 
 export const SCENES: { id: SceneId; name: string; desc: string }[] = [
-  { id: 0, name: "棋盘与贴图球", desc: "世界棋盘 + 双线性图像纹理" },
+  { id: 0, name: "棋盘与贴图球", desc: "双线性贴图 + 凹凸球" },
   { id: 1, name: "纹理康奈尔", desc: "网格雕塑 · 贴图立方 · 面光" },
-  { id: 2, name: "作业房间", desc: "OBJ 奖杯 · 桌椅 · 木纹" },
-  { id: 3, name: "晶簇 BVH", desc: "数百三角簇压力测试" },
+  { id: 2, name: "作业房间", desc: "OBJ · instance 椅 · 凹凸墙" },
+  { id: 3, name: "晶簇 BVH", desc: "instance 阵列 + SAH" },
   { id: 4, name: "经典三球", desc: "衔接 cpp-002" },
 ];
 
@@ -36,6 +36,7 @@ export const DEBUG_MODES = [
   { id: 1 as const, name: "法线" },
   { id: 2 as const, name: "深度" },
   { id: 3 as const, name: "发光体" },
+  { id: 4 as const, name: "UV 坐标" },
 ];
 
 export const RES_PRESETS = [

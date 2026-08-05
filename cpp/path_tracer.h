@@ -45,6 +45,9 @@ private:
       return color(d, d, d);
     }
     if (flags.debug_mode == 3) return rec.mat->emitted(rec);
+    if (flags.debug_mode == 4) return color(rec.u, rec.v, 0.15); // UV 可视化
+
+    rec.mat->perturb_normal(rec);
 
     color emit = rec.mat->emitted(rec);
     const bool hit_light = emit.length_squared() > 0;
