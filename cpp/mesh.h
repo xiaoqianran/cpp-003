@@ -132,6 +132,47 @@ inline triangle_mesh make_cube_mesh(shared_ptr<material> mat, point3 center, dou
   return m;
 }
 
+
+/** 任意尺寸 AABB 盒子（中心 + 半轴），用于桌面等扁长体 */
+inline triangle_mesh make_box_mesh(shared_ptr<material> mat, point3 center, vec3 half) {
+  triangle_mesh m;
+  m.mat = mat;
+  double hx = half.x(), hy = half.y(), hz = half.z();
+  struct Face {
+    vec3 n;
+    point3 q[4];
+  };
+  Face faces[6] = {
+      {vec3(0, 0, 1),
+       {point3(-hx, -hy, hz), point3(hx, -hy, hz), point3(hx, hy, hz), point3(-hx, hy, hz)}},
+      {vec3(0, 0, -1),
+       {point3(hx, -hy, -hz), point3(-hx, -hy, -hz), point3(-hx, hy, -hz), point3(hx, hy, -hz)}},
+      {vec3(0, 1, 0),
+       {point3(-hx, hy, hz), point3(hx, hy, hz), point3(hx, hy, -hz), point3(-hx, hy, -hz)}},
+      {vec3(0, -1, 0),
+       {point3(-hx, -hy, -hz), point3(hx, -hy, -hz), point3(hx, -hy, hz), point3(-hx, -hy, hz)}},
+      {vec3(1, 0, 0),
+       {point3(hx, -hy, hz), point3(hx, -hy, -hz), point3(hx, hy, -hz), point3(hx, hy, hz)}},
+      {vec3(-1, 0, 0),
+       {point3(-hx, -hy, -hz), point3(-hx, -hy, hz), point3(-hx, hy, hz), point3(-hx, hy, -hz)}},
+  };
+  double uvs[4][2] = {{0, 0}, {1, 0}, {1, 1}, {0, 1}};
+  for (auto &f : faces) {
+    int base = static_cast<int>(m.verts.size());
+    for (int i = 0; i < 4; ++i) {
+      vertex vt;
+      vt.p = center + f.q[i];
+      vt.n = f.n;
+      vt.u = uvs[i][0];
+      vt.v = uvs[i][1];
+      m.verts.push_back(vt);
+    }
+    m.add_triangle(base + 0, base + 1, base + 2);
+    m.add_triangle(base + 0, base + 2, base + 3);
+  }
+  return m;
+}
+
 inline triangle_mesh make_crystal_mesh(shared_ptr<material> mat, point3 center, double scale) {
   triangle_mesh m;
   m.mat = mat;

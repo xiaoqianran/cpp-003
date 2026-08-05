@@ -24,9 +24,9 @@ export type EngineConfig = {
 export type ConfigPatch = Partial<EngineConfig> & { label?: string };
 
 export const SCENES: { id: SceneId; name: string; desc: string }[] = [
-  { id: 0, name: "棋盘与贴图球", desc: "世界空间棋盘 + 图像纹理球" },
+  { id: 0, name: "棋盘与贴图球", desc: "世界棋盘 + 双线性图像纹理" },
   { id: 1, name: "纹理康奈尔", desc: "网格雕塑 · 贴图立方 · 面光" },
-  { id: 2, name: "立方阵列", desc: "UV 贴图 mesh 阵列" },
+  { id: 2, name: "作业房间", desc: "OBJ 奖杯 · 桌椅 · 木纹" },
   { id: 3, name: "晶簇 BVH", desc: "数百三角簇压力测试" },
   { id: 4, name: "经典三球", desc: "衔接 cpp-002" },
 ];
@@ -49,7 +49,7 @@ export const ORBIT_PITCH_SENS = 0.004;
 
 export function sceneBackground(sceneId: SceneId): [number, number, number] {
   if (sceneId === 1) return [0, 0, 0];
-  if (sceneId === 2) return [0.55, 0.65, 0.85];
+  if (sceneId === 2) return [0.05, 0.05, 0.06];
   if (sceneId === 3) return [0.45, 0.55, 0.75];
   return [0.7, 0.8, 1.0];
 }
@@ -63,7 +63,7 @@ export function sceneDefaults(sceneId: SceneId): Pick<
     return { yaw: 0, pitch: 0.05, radius: 3.4, vfov: 40, defocus: 0, maxDepth: 50, background };
   }
   if (sceneId === 2) {
-    return { yaw: 0.4, pitch: 0.25, radius: 10, vfov: 28, defocus: 0, maxDepth: 20, background };
+    return { yaw: 0.35, pitch: 0.12, radius: 5.2, vfov: 42, defocus: 0, maxDepth: 40, background };
   }
   if (sceneId === 3) {
     return { yaw: 0.3, pitch: 0.2, radius: 16, vfov: 25, defocus: 0, maxDepth: 12, background };
@@ -75,7 +75,7 @@ export function sceneDefaults(sceneId: SceneId): Pick<
 }
 
 export function defaultConfig(): EngineConfig {
-  const sceneId: SceneId = 1;
+  const sceneId: SceneId = 2; // 作业房间默认
   return {
     sceneId,
     resIdx: 0,
@@ -137,14 +137,15 @@ export function orbitPosition(
 
 export function lookTarget(sceneId: SceneId): [number, number, number] {
   if (sceneId === 1) return [0, 1, 0];
+  if (sceneId === 2) return [0, 0.9, -0.2];
   if (sceneId === 3) return [0, 0.5, 0];
   return [0, 1, 0];
 }
 
 export function radiusRange(sceneId: SceneId) {
   if (sceneId === 1) return { min: 1.8, max: 6 };
+  if (sceneId === 2) return { min: 2.5, max: 10 };
   if (sceneId === 3) return { min: 8, max: 28 };
-  if (sceneId === 2) return { min: 4, max: 18 };
   return { min: 3, max: 14 };
 }
 

@@ -33,11 +33,12 @@ UI → EngineConfig → rt_apply → engine
 | `cpp/mesh.h` | 三角 · Möller–Trumbore · 立方/晶体 mesh |
 | `cpp/texture.h` | solid / checker / UV checker / image |
 | `cpp/material.h` | 朗伯采样纹理 |
-| `cpp/scenes.h` | 纹理康奈尔、阵列、晶簇 BVH |
+| `cpp/loader_obj.h` | 内存 OBJ 解析 |
+| `cpp/scenes.h` | 作业房间、康奈尔、晶簇 |
 
 ## 场景
 
-0 棋盘与贴图球 · 1 纹理康奈尔+网格 · 2 立方阵列 · 3 晶簇 BVH · 4 经典三球
+0 棋盘贴图球 · 1 纹理康奈尔 · **2 作业房间（OBJ 奖杯）** · 3 晶簇 BVH · 4 经典三球
 
 ## 命令
 

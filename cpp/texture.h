@@ -1,4 +1,4 @@
-// 纹理：常量 / 棋盘 / 程序化图像
+// 纹理：常量 / 棋盘 / 程序化图像（双线性）
 #pragma once
 
 #include "rt_common.h"
@@ -42,7 +42,6 @@ private:
   shared_ptr<texture> odd;
 };
 
-/** UV 棋盘（贴在三角/平面上） */
 class uv_checker_texture : public texture {
 public:
   uv_checker_texture(double scale, const color &c1, const color &c2)
@@ -59,14 +58,12 @@ private:
   color odd, even;
 };
 
-/** 程序化小图像：嵌在代码里，不依赖外部文件 */
 class image_texture : public texture {
 public:
-  image_texture(int w, int h, std::vector<unsigned char> rgb)
-      : width(w), height(h), data(std::move(rgb)) {}
+  image_texture(int w, int h, std::vector<unsigned char> rgb, bool bilinear = true)
+      : width(w), height(h), data(std::move(rgb)), bilinear(bilinear) {}
 
-  /** 生成彩色噪声格子图，演示双线性采样 */
-  static shared_ptr<image_texture> make_demo(int w = 64, int h = 64) {
+  static shared_ptr<image_texture> make_demo(int w = 64, int h = 64, bool bilinear = true) {
     std::vector<unsigned char> rgb(static_cast<size_t>(w * h * 3));
     for (int y = 0; y < h; ++y) {
       for (int x = 0; x < w; ++x) {
@@ -79,26 +76,68 @@ public:
         rgb[i + 2] = static_cast<unsigned char>(cell ? 60 : 200);
       }
     }
-    return make_shared<image_texture>(w, h, std::move(rgb));
+    return make_shared<image_texture>(w, h, std::move(rgb), bilinear);
+  }
+
+  /** 木纹程序图（作业房间桌面） */
+  static shared_ptr<image_texture> make_wood(int w = 128, int h = 128) {
+    std::vector<unsigned char> rgb(static_cast<size_t>(w * h * 3));
+    for (int y = 0; y < h; ++y) {
+      for (int x = 0; x < w; ++x) {
+        double fx = double(x) / w;
+        double grain = 0.5 + 0.5 * std::sin(fx * 40.0 + 3.0 * std::sin(double(y) * 0.15));
+        double r = 0.35 + 0.35 * grain;
+        double g = 0.22 + 0.2 * grain;
+        double b = 0.1 + 0.08 * grain;
+        size_t i = static_cast<size_t>((y * w + x) * 3);
+        rgb[i + 0] = static_cast<unsigned char>(clamp(r, 0.0, 1.0) * 255);
+        rgb[i + 1] = static_cast<unsigned char>(clamp(g, 0.0, 1.0) * 255);
+        rgb[i + 2] = static_cast<unsigned char>(clamp(b, 0.0, 1.0) * 255);
+      }
+    }
+    return make_shared<image_texture>(w, h, std::move(rgb), true);
   }
 
   color value(double u, double v, const point3 &) const override {
     if (data.empty()) return color(0, 1, 1);
     u = clamp(u, 0.0, 1.0);
-    v = 1.0 - clamp(v, 0.0, 1.0); // 图像 v 向下
+    v = 1.0 - clamp(v, 0.0, 1.0);
 
-    auto i = static_cast<int>(u * width);
-    auto j = static_cast<int>(v * height);
-    if (i >= width) i = width - 1;
-    if (j >= height) j = height - 1;
+    if (!bilinear) {
+      auto i = static_cast<int>(u * width);
+      auto j = static_cast<int>(v * height);
+      if (i >= width) i = width - 1;
+      if (j >= height) j = height - 1;
+      return pixel(i, j);
+    }
 
-    const double color_scale = 1.0 / 255.0;
-    size_t idx = static_cast<size_t>(3 * i + 3 * width * j);
-    return color(color_scale * data[idx], color_scale * data[idx + 1],
-                 color_scale * data[idx + 2]);
+    // 双线性
+    double x = u * width - 0.5;
+    double y = v * height - 0.5;
+    int i = static_cast<int>(std::floor(x));
+    int j = static_cast<int>(std::floor(y));
+    double fx = x - i;
+    double fy = y - j;
+    auto samp = [&](int ii, int jj) {
+      ii = (ii % width + width) % width;
+      jj = clamp(jj, 0, height - 1);
+      return pixel(ii, jj);
+    };
+    color c00 = samp(i, j);
+    color c10 = samp(i + 1, j);
+    color c01 = samp(i, j + 1);
+    color c11 = samp(i + 1, j + 1);
+    return (1 - fx) * (1 - fy) * c00 + fx * (1 - fy) * c10 + (1 - fx) * fy * c01 + fx * fy * c11;
   }
 
 private:
   int width, height;
   std::vector<unsigned char> data;
+  bool bilinear;
+
+  color pixel(int i, int j) const {
+    const double s = 1.0 / 255.0;
+    size_t idx = static_cast<size_t>(3 * i + 3 * width * j);
+    return color(s * data[idx], s * data[idx + 1], s * data[idx + 2]);
+  }
 };

@@ -1,6 +1,6 @@
 import type { Chapter } from "./types";
 
-/** cpp-003 课程：网格与纹理 */
+/** cpp-003 课程：网格 · 纹理 · OBJ · 作业房间 */
 export const CHAPTERS: Chapter[] = [
   {
     id: "ch00",
@@ -22,18 +22,18 @@ export const CHAPTERS: Chapter[] = [
           {
             type: "compare",
             left: { title: "cpp-002", body: "球/四边形 · NEE·MIS·RR · 渲染方程" },
-            right: { title: "cpp-003", body: "三角网格 · 纹理 UV · 对三角 BVH" },
+            right: { title: "cpp-003", body: "三角网格 · 纹理 UV · OBJ · 作业房间" },
           },
           {
             type: "map",
             rows: [
-              { file: "cpp/mesh.h", note: "MT 求交 · cube/crystal" },
-              { file: "cpp/texture.h", note: "checker / image" },
-              { file: "cpp/path_tracer.h", note: "积分器继承 002" },
+              { file: "cpp/mesh.h", note: "MT 求交 · cube/box/crystal" },
+              { file: "cpp/texture.h", note: "checker / 双线性 image" },
+              { file: "cpp/loader_obj.h", note: "内存 OBJ" },
             ],
           },
         ],
-        action: { label: "打开纹理康奈尔", sceneId: 1, useNee: true, useMis: true },
+        action: { label: "打开作业房间", sceneId: 2, useNee: true, useMis: true },
       },
     ],
   },
@@ -58,11 +58,6 @@ export const CHAPTERS: Chapter[] = [
             type: "p",
             text: "实现见 triangle::hit。法线与 UV 用同一组重心权重插值。",
           },
-          {
-            type: "callout",
-            tone: "tip",
-            text: "用法线调试视图看晶体与立方体的平滑/面法线差异。",
-          },
         ],
         action: { label: "康奈尔网格 + 法线", sceneId: 1, debugMode: 1 },
       },
@@ -84,18 +79,9 @@ export const CHAPTERS: Chapter[] = [
           {
             type: "ul",
             items: [
-              "solid_color：常量",
-              "checker_texture：按世界坐标 xyz 棋盘",
-              "uv_checker_texture：按三角/平面 UV",
-              "image_texture：内存中的小图（演示双线性入口）",
+              "solid_color / checker_texture / uv_checker_texture",
+              "image_texture：双线性采样 + make_wood 木纹",
             ],
-          },
-          {
-            type: "quiz",
-            q: "球上的贴图主要依赖？",
-            options: ["仅世界 xyz 棋盘", "球面参数化得到的 UV", "只用法线 x 分量", "随机噪声"],
-            answer: 1,
-            explain: "sphere::hit 用 theta/phi 写 rec.u/v，再交给 image_texture。",
           },
         ],
         action: { label: "棋盘与贴图球", sceneId: 0 },
@@ -112,20 +98,71 @@ export const CHAPTERS: Chapter[] = [
         id: "ch03-bvh",
         title: "对三角建 SAH-BVH",
         minutes: 10,
-        summary: "每个三角是叶；mesh.append_to 展开进世界后交给 bvh_node。",
-        refs: ["cpp-002 SAH", "GAMES101 加速"],
+        summary: "每个三角是叶；append_to 后交给 bvh_node。",
+        refs: ["cpp-002 SAH"],
         blocks: [
           {
             type: "p",
-            text: "场景 3 有大量晶体/立方三角。开关 BVH 对比状态栏 ms。",
-          },
-          {
-            type: "callout",
-            tone: "warn",
-            text: "超大地面球会毁掉剪枝；晶簇场景用有限 quad 地面。",
+            text: "场景 3 大量晶体/立方。开关 BVH 对比 ms。作业房间约 170+ 三角体。",
           },
         ],
         action: { label: "晶簇压力", sceneId: 3, useBvh: true },
+      },
+    ],
+  },
+  {
+    id: "ch04",
+    index: 4,
+    title: "OBJ 加载",
+    subtitle: "内存字符串解析",
+    lessons: [
+      {
+        id: "ch04-obj",
+        title: "最小 OBJ 加载器",
+        minutes: 12,
+        summary: "解析 v/vt/vn/f，扇形拆三角，scale/yaw/平移。",
+        refs: ["Wavefront OBJ"],
+        blocks: [
+          {
+            type: "p",
+            text: "WASM 不便读盘：小型 OBJ 嵌成 C 字符串。接口 load_obj_string。作业房间有奖杯与四面体。",
+          },
+          {
+            type: "map",
+            rows: [
+              { file: "cpp/loader_obj.h", note: "解析 + 变换" },
+              { file: "cpp/scenes.h", note: "场景 2" },
+            ],
+          },
+          {
+            type: "callout",
+            tone: "tip",
+            text: "作业：把你的低模 OBJ 贴进 k_builtin_*。",
+          },
+        ],
+        action: { label: "作业房间", sceneId: 2, useNee: true, useMis: true },
+      },
+    ],
+  },
+  {
+    id: "ch05",
+    index: 5,
+    title: "纹理过滤",
+    subtitle: "双线性",
+    lessons: [
+      {
+        id: "ch05-bilinear",
+        title: "双线性采样",
+        minutes: 8,
+        summary: "四邻域加权，木纹桌面更顺。",
+        refs: ["PBRT filtering 简化"],
+        blocks: [
+          {
+            type: "formula",
+            latex: "C = (1-fx)(1-fy)C00 + fx(1-fy)C10 + (1-fx)fy C01 + fx fy C11",
+          },
+        ],
+        action: { label: "作业房间看木纹", sceneId: 2 },
       },
     ],
   },
